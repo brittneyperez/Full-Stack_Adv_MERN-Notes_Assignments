@@ -1,53 +1,46 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import PersonForm from './PersonForm';
 
 const UpdatePersonForm = () => {
     
-    const {id} = useParams(); // this process is identical to the one we used with our database
-    const [ firstName, setFirstName ] = useState();
-    const [ lastName, setLastName ] = useState();
-    const navigate = useNavigate(); // retrieve the current value for this person so we can fill in the form with what is in the DB currently
+    const {id} = useParams();
+    const [ person, setPerson ] = useState({});
+    const [ loaded, setLoaded ] = useState(false);
     
     useEffect(() => {
         axios.get(`http://localhost:8000/api/people/${id}`)
             .then(res => {
-                setFirstName(res.data.firstName);
-                setLastName(res.data.lastName);
+                console.log(res.data);
+                setPerson(res.data);
+                setLoaded(true);
             })
-            .catch(err => console.log(err))
+            // .catch(err => console.log(err))
     }, [])
     
-    const updatePersonSubmit = (e) => {
-        e.preventDefault();
-        axios.patch(`http://localhost:8000/api/people/${id}`, {
-            firstName, lastName
-        })
+    const updatePerson = personParam => {
+        // ! e.preventDefault() is not needed anymore since we are now using onSubmitProp
+        axios.patch(`http://localhost:8000/api/people/${id}`, personParam)
             .then(res => {
                 console.log(res);
-                navigate("/home"); // this will take us back to the Main.js
+                console.log(res.data);
             })
-            .catch(err => console.log(err))
+            // .catch(err => console.log(err))
     }
     
     return (
         <div>
             <h1>Update a Person</h1>
-            <form onSubmit={ updatePersonSubmit }>
-                <p>
-                    <label>First Name: </label> <br />
-                    <input type="text" name="firstName" value={firstName} 
-                        onChange={(e) => { setFirstName(e.target.value) }}
-                    />
-                </p>
-                <p>
-                    <label>Last Name: </label> <br />
-                    <input type="text" name="lastName" value={lastName} 
-                        onChange={(e) => { setLastName(e.target.value) }}
-                    />
-                </p>
-                <input type="submit" />
-            </form>
+            {
+                loaded && <PersonForm
+                    onSubmitProp={updatePerson}
+                    initialFirstName={person.firstName}
+                    initialLastName={person.lastName}
+                />
+            /* This is a ternary operator for { loaded ? <PersonForm /> : null };
+            PersonForm will now wait until useEffect runs to render, and allow inputs to be prepopulated */
+            }
         </div>
     )
 }
